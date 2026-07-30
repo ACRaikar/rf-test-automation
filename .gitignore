@@ -217,6 +217,7 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+
 # tutoring/project files — not part of the portfolio repo
 *.html
 progress-log.md
