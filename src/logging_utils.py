@@ -5,6 +5,7 @@ import json
 import pyvisa
 from pyvisa import VisaIOError
 from datetime import datetime
+from contextlib import contextmanager
 
 def log_reading(filepath, timestamp, voltage, status):
     file_path = pathlib.Path(filepath)
@@ -59,36 +60,54 @@ def summarize_run(filepath):
             "error_count": error_count, "min_voltage": min_voltage, "max_voltage": max_voltage,
             "average_voltage": average_voltage}
 
-def check_voltage(resource_string, target, tolerance=0.01):
+
+@contextmanager
+def open_instrument(resource_string):
     rm = pyvisa.ResourceManager()
     inst = None
     try:
         inst = rm.open_resource(resource_string)
-        reading = float(inst.query("VOLT?"))
-    except VisaIOError as e:
-        reading = None
-        return reading, "ERROR"
+        yield inst
     finally:
-        if inst:
+        if inst is not None:
             inst.close()
-    
+        rm.close()
+
+def check_voltage_core(inst, target, tolerance=0.01):
+    """Pure logic — takes an already-open inst. This is what gets unit-tested."""
+    try:
+        reading = float(inst.query("VOLT?"))
+    except VisaIOError:
+        return None, "ERROR"
+    except ValueError:
+        return None, "ERROR"
+
     if math.isclose(reading, target, rel_tol=tolerance):
-        return reading, "PASS" 
+        return reading, "PASS"
     else:
         return reading, "FAIL"
 
-def sweep_voltages(resource_string, targets,filepath):
+
+def check_voltage(resource_string, target, tolerance=0.01):
+    """Thin wrapper for a single one-off check against real hardware."""
+    with open_instrument(resource_string) as inst:
+        return check_voltage_core(inst, target, tolerance)
+
+def sweep_voltages_core(inst, targets, filepath):
+    """Testable — takes an already-open inst, no resource management."""
     for target in targets:
         timestamp = datetime.now().isoformat()
-        try:
-            reading, status = check_voltage(resource_string, target, tolerance=0.01)
+        reading, status = check_voltage_core(inst, target, tolerance=0.01)
+        log_reading(filepath, timestamp, reading, status)
+
+def sweep_voltages(resource_string, targets, filepath):
+    """Opens the connection ONCE, reuses it across every target in the sweep."""
+    with open_instrument(resource_string) as inst:
+        for target in targets:
+            timestamp = datetime.now().isoformat()
+            reading, status = check_voltage_core(inst, target, tolerance=0.01)
             log_reading(filepath, timestamp, reading, status)
-        except VisaIOError as e:
-            reading = f"Error - {e}"
-            status = "ERROR"
-            log_reading(filepath, timestamp, reading,status)
-            continue
-        
+
 if __name__ == "__main__":
     log_reading('Measurements.csv', '2024-06-01 12:00:00', 3.3, 'PASS')
     log_reading('Measurements.csv', '2024-06-01 12:05:00', 3.5, 'FAIL')
