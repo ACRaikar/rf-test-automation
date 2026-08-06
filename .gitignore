@@ -226,3 +226,4 @@ RESOURCES.md
 # test-run outputs, not source
 *.csv
 logs/
+.DS_Store
