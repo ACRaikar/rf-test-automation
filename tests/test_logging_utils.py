@@ -68,7 +68,7 @@ def fake_sweep():
 
 def test_sweep_level(tmp_path, fake_sweep):
     path = tmp_path/"voltage_test.csv"
-    targets = [5.0, 5.0,5.0,5.0,5.0]
+    targets = [5.0,5.0,5.0,5.0,5.0]
     sweep_voltages_core(fake_sweep, targets, path)
     data = read_log(path)
     assert "PASS" == data[0]["status"]
