@@ -2,6 +2,7 @@ import csv
 import pathlib
 import math
 import json
+import re
 import pyvisa
 from pyvisa import VisaIOError
 from datetime import datetime
@@ -107,6 +108,46 @@ def sweep_voltages(resource_string, targets, filepath):
             timestamp = datetime.now().isoformat()
             reading, status = check_voltage_core(inst, target, tolerance=0.01)
             log_reading(filepath, timestamp, reading, status)
+
+pattern = re.compile(
+    r"(?P<date>\d{4}-\d{2}-\d{2})T(?P<time>\d{2}:\d{2}:\d{2})Z\s+"
+    r"inst=(?P<inst>\w+)\s+" 
+    r"setpoint=(?P<setpoint>[\d.]+)\s+"
+    r"actual=(?P<actual>[\d.]+)\s+"
+    r"delta=(?P<delta>-?[\d.]+)"
+)
+
+pattern2 = re.compile(
+    r"(?P<timestamp>[\d-]+\s[\d:]+),"
+    r"(?P<voltage>[-\d.]+),"
+    r"(?P<status>\w+)"
+)
+
+pattern3 = re.compile(
+    r"error_code=(?P<error_code>-?\d+)"
+)
+
+PATTERNS = [pattern, pattern2]  # module-level, compiled once
+
+def parse_log_line(line):
+    for p in PATTERNS:
+        match = p.search(line)
+        if match:
+            return match.groupdict()
+    return None
+
+def parse_log_file(filepath):
+    results = []
+    with open(filepath) as f:
+        for line in f:
+            parsed = parse_log_line(line)
+            if parsed is not None:
+                results.append(parsed)
+    return results
+
+def extract_error_codes(line):
+    return pattern3.findall(line)
+
 
 if __name__ == "__main__":
     log_reading('Measurements.csv', '2024-06-01 12:00:00', 3.3, 'PASS')
