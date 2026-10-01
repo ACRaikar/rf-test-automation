@@ -2,7 +2,7 @@ import requests
 
 def get_user_info(url):
     response = requests.get(url, timeout=10)
-    response.raise_for_status
+    response.raise_for_status()
     data = response.json()
     return data["name"],data["email"]
 
@@ -10,7 +10,7 @@ def count_posts_by_user(user_id):
     url = "https://jsonplaceholder.typicode.com/posts"
     params = {'userId': user_id}
     response = requests.get(url, params=params, timeout=10)
-    response.raise_for_status
+    response.raise_for_status()
     return len(response.json())
   
 def report_result_core(post_fn, api_url, timestamp, voltage, status):
