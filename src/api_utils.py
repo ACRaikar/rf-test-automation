@@ -35,7 +35,7 @@ def report_result(api_url, timestamp, voltage,status):
 def get_post_titles_by_user_core(get_fn, user_id):
     try:
         url = f"https://jsonplaceholder.typicode.com/posts?userId={user_id}"
-        response = get_fn(url, timeout=10)
+        response = get_fn(url, timeout=20)
         response.raise_for_status()
         data = response.json()
         titles = [post["title"] for post in data]
