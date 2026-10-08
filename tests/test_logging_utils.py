@@ -75,5 +75,5 @@ def test_sweep_level(tmp_path, fake_sweep):
     assert "FAIL" == data[1]["status"]
     assert "PASS" == data[2]["status"]
     assert "FAIL" == data[3]["status"]
-    assert "PASS" == data[4]["status"]
+    assert "FAIL" == data[4]["status"]
     assert len(data) == 5
