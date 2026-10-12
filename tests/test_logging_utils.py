@@ -50,7 +50,7 @@ def test_fake_logging(tmp_path):
 
 
 #Sweep-level_test
-from logging_utils import sweep_voltages_core
+from logging_utils import sweep_voltages_core, check_voltage
 
 class FakeSweepVoltage:
     def __init__(self, replies):
@@ -77,3 +77,9 @@ def test_sweep_level(tmp_path, fake_sweep):
     assert "FAIL" == data[3]["status"]
     assert "PASS" == data[4]["status"]
     assert len(data) == 5
+
+#Real Hardware voltage
+@pytest.mark.hardware
+def test_check_voltage_hardware():
+    result = check_voltage("GPIB0::12::INSTR", target=5.0, tolerance=0.01)
+    assert "PASS" == result[1]
